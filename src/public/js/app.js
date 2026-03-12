@@ -766,7 +766,7 @@ function useScenario(scenario, location) {
 async function searchLocation(query) {
   showToast('Searching...', 'info');
   try {
-    // Try Gemini-powered search first via our API
+    // Try AI-powered search first via our API
     const res  = await fetch('/api/search-place', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ query })
