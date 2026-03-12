@@ -1,7 +1,6 @@
 # 🏙️ CivicTwin AI
 
-![CivicTwin AI Banner](https://raw.githubusercontent.com/placeholder-images/civictwin-banner.png) 
-*(Note: Replace with your actual banner if available)*
+![CivicTwin AI Banner](./src/public/assets/banner.png)
 
 **CivicTwin AI** is a state-of-the-art AI-powered Digital Twin platform designed for urban planners, community leaders, and infrastructure developers. It leverages advanced Large Language Models (LLMs) to simulate the socio-economic and environmental impacts of infrastructure projects in real-time, providing deep insights into community needs and future outcomes.
 
@@ -55,7 +54,6 @@ The project relies on the following key libraries to function:
 
 ### **AI & Simulation**
 - **`@aws-sdk/client-bedrock-runtime`**: Official AWS SDK for interacting with Amazon Bedrock (Nova models).
-- **`@google/genai`**: Google Generative AI SDK (optional fallback support).
 
 ### **Development Tools**
 - **`vite`**: Next-generation frontend tooling for high-speed development.
