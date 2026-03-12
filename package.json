@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1006.0",
-    "@google/genai": "^0.7.0",
     "axios": "^1.6.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
