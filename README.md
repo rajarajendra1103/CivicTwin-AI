@@ -16,8 +16,6 @@
   - Environmental Impact
   - Transport Efficiency
   - Water & Air Quality
-- **📋 Scenario Generator**: Input a goal (e.g., "Improve literacy in rural regions") and receive 3 distinct, AI-generated infrastructure development strategies.
-- **🌪️ Disaster Impact Simulation**: Analyze regional vulnerabilities by simulating disasters like droughts, floods, or earthquakes and receive AI-driven mitigation strategies.
 - **✨ Premium UI/UX**: A modern, glassmorphic interface designed for clarity and engagement, featuring responsive panels and real-time updates.
 
 ---
