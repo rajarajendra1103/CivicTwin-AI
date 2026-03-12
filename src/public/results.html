@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulation Results | CivicTwin AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <style>
+    html, body { overflow-y: auto !important; height: auto !important; min-height: 100vh; }
+    .results-page {
+      max-width: 1200px; margin: 40px auto; padding: 0 20px 80px;
+      display: flex; flex-direction: column; gap: 32px;
+      animation: fadeIn 0.5s ease;
+    }
+    .results-header {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      border-bottom: 1px solid var(--border); padding-bottom: 24px;
+    }
+    .results-title h1 {
+      font-family: var(--font-head); font-size: 2.2rem; font-weight: 800;
+      margin-bottom: 8px; background: linear-gradient(135deg, var(--text-1), var(--text-3));
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .results-meta { display: flex; gap: 16px; font-size: 0.9rem; color: var(--text-2); }
+    .results-meta span { display: flex; align-items: center; gap: 6px; }
+
+    .results-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+    }
+    @media (max-width: 900px) { .results-grid { grid-template-columns: 1fr; } }
+
+    .full-width { grid-column: 1 / -1; }
+
+    .card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-xl); padding: 28px;
+      box-shadow: var(--shadow-card);
+    }
+    .card-title {
+      font-family: var(--font-head); font-size: 1.1rem; font-weight: 700;
+      color: var(--text-1); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+      justify-content: space-between;
+    }
+
+    .chart-controls { display: flex; gap: 8px; }
+    .chart-btn {
+      padding: 4px 12px; font-size: 0.75rem; border: 1px solid var(--border);
+      background: var(--bg-surface); color: var(--text-2); border-radius: 4px; cursor: pointer;
+    }
+    .chart-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    /* Override some styles for standalone page */
+    .impact-banner { padding: 32px; }
+    .impact-score-circle { width: 90px; height: 90px; }
+    .impact-num { font-size: 1.8rem; }
+    .impact-project { font-size: 1.2rem; }
+
+    .chart-container { height: 350px; position: relative; }
+    .metrics-grid { gap: 12px; }
+    .metric-row { gap: 16px; }
+    .metric-label { width: 140px; font-size: 0.85rem; }
+    .metric-bar-wrap { height: 8px; }
+
+    .explanation-text { font-size: 1rem; line-height: 1.8; }
+    .three-explanations { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); display: grid; gap: 16px; }
+
+    .projects-list { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+    .project-pill {
+      background: var(--bg-surface); border: 1px solid var(--border);
+      padding: 8px 16px; border-radius: 30px; display: flex; align-items: center; gap: 8px;
+      font-size: 0.85rem; color: var(--text-1);
+    }
+
+    .analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px; }
+    @media (max-width: 700px) { .analysis-grid { grid-template-columns: 1fr; } }
+    .analysis-box { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+    .analysis-box h4 { margin-top: 0; margin-bottom: 12px; font-size: 0.9rem; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.5px; }
+    .analysis-box ul { padding-left: 20px; font-size: 0.9rem; color: var(--text-1); margin: 0; }
+    .analysis-box li { margin-bottom: 8px; line-height: 1.5; }
+
+    .btn-print {
+      padding: 10px 20px; background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-md); color: var(--text-2); cursor: pointer;
+      font-family: var(--font-body); font-weight: 600; display: flex; align-items: center; gap: 8px;
+      transition: var(--transition);
+    }
+    .btn-print:hover { background: var(--bg-hover); color: var(--text-1); border-color: var(--primary); }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media print {
+      .btn-print { display: none; }
+      body { background: white; color: black; }
+      .card { border-color: #eee; box-shadow: none; break-inside: avoid; }
+      html, body { overflow: visible !important; height: auto !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="results-page">
+    <div class="results-header">
+      <div class="results-title">
+        <h1>Simulation Report</h1>
+        <div class="results-meta">
+          <span id="resLocation">🌐 Unknown Location</span>
+          <span id="resDate">🕒 —</span>
+        </div>
+      </div>
+      <button class="btn-print" onclick="window.print()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+        Print Report
+      </button>
+    </div>
+
+    <!-- Impact Overview -->
+    <div class="card full-width">
+      <div class="impact-banner">
+        <div class="impact-score-circle" id="impactScoreCircle">
+          <span class="impact-num" id="impactNum">—</span>
+          <span class="impact-label">Impact</span>
+        </div>
+        <div class="impact-info">
+          <div class="impact-project" id="impactProject">—</div>
+          <div class="projects-list" id="resProjectsList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="card">
+      <div class="card-title">
+        <span>📊 Impact Distribution</span>
+        <div class="chart-controls">
+          <button class="chart-btn active" id="btnRadar" onclick="switchChart('radar')">Radar</button>
+          <button class="chart-btn" id="btnBar" onclick="switchChart('bar')">Bar</button>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="radarChart"></canvas>
+        <canvas id="barChart" style="display:none"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📉 Detailed Metrics</div>
+      <div class="metrics-grid" id="metricsGrid"></div>
+    </div>
+
+    <!-- Explanation -->
+    <div class="card full-width">
+      <div class="card-title">✨ AI Strategic Summary</div>
+      <p class="explanation-text" id="explanationText">—</p>
+      <div class="three-explanations" id="threeExplanations" style="margin-top:24px"></div>
+    </div>
+
+    <!-- Deep Analysis -->
+    <div class="card full-width" id="analysisSection" style="display:none">
+      <div class="card-title">🧠 Analysis Results</div>
+      <p class="explanation-text" id="resSummary" style="margin-bottom:24px; font-weight: 500;"></p>
+      <div class="analysis-grid">
+        <div class="analysis-box">
+          <h4>Risks & Challenges</h4>
+          <ul id="resRisks"></ul>
+        </div>
+        <div class="analysis-box">
+          <h4>Strategic Trade-offs</h4>
+          <ul id="resTradeoffs"></ul>
+        </div>
+        <div class="analysis-box full-width">
+          <h4>Optimization Suggestions</h4>
+          <ul id="resSuggestions"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Granular Data -->
+    <div class="card full-width" id="granularSection" style="display:none">
+      <div class="card-title">🔬 Granular Impact Analysis</div>
+      <div class="granular-grid" id="granularGrid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));"></div>
+    </div>
+  </div>
+
+  <script src="/js/results.js"></script>
+</body>
+</html>

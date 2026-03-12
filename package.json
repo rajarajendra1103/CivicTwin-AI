@@ -1,0 +1,26 @@
+{
+  "name": "civictwin-ai",
+  "version": "1.0.0",
+  "description": "AI-powered digital twin platform for community infrastructure simulation",
+  "type": "module",
+  "scripts": {
+    "predev": "kill-port 3001 5173 5174 5175 || exit 0",
+    "dev": "concurrently -k -n \"API,UI\" --prefix-colors \"cyan,magenta\" \"node src/server.js\" \"vite\"",
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1006.0",
+    "@google/genai": "^0.7.0",
+    "axios": "^1.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "open": "^10.1.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "kill-port": "^2.0.1",
+    "nodemon": "^3.0.1",
+    "vite": "^6.0.0"
+  }
+}

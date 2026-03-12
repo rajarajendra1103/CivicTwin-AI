@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CivicTwin AI – Community Infrastructure Simulator</title>
+  <meta name="description" content="AI-powered digital twin platform that helps communities simulate infrastructure impacts before real-world implementation." />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+
+<!-- ===== NAVBAR ===== -->
+<nav class="navbar">
+  <div class="nav-brand">
+    <div class="nav-logo">
+      <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" fill="url(#g1)" opacity="0.2"/>
+        <path d="M20 8 L32 15 L32 25 L20 32 L8 25 L8 15 Z" stroke="url(#g1)" stroke-width="1.5" fill="none"/>
+        <circle cx="20" cy="20" r="4" fill="url(#g1)"/>
+        <line x1="20" y1="8" x2="20" y2="16" stroke="url(#g1)" stroke-width="1.5"/>
+        <line x1="20" y1="24" x2="20" y2="32" stroke="url(#g1)" stroke-width="1.5"/>
+        <line x1="8" y1="15" x2="16" y2="19" stroke="url(#g1)" stroke-width="1.5"/>
+        <line x1="24" y1="21" x2="32" y2="25" stroke="url(#g1)" stroke-width="1.5"/>
+        <line x1="32" y1="15" x2="24" y2="19" stroke="url(#g1)" stroke-width="1.5"/>
+        <line x1="16" y1="21" x2="8" y2="25" stroke="url(#g1)" stroke-width="1.5"/>
+        <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#22d3ee"/>
+        </linearGradient></defs>
+      </svg>
+    </div>
+    <span class="nav-title">CivicTwin <span class="accent">AI</span></span>
+  </div>
+  <div class="nav-status">
+    <div class="status-dot" id="apiStatusDot"></div>
+    <span id="apiStatusText">Connecting...</span>
+  </div>
+</nav>
+
+<!-- ===== MAIN APP LAYOUT ===== -->
+<div class="app-layout" id="panelSimulate">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+
+    <!-- Steps -->
+    <div class="sidebar-section">
+      <h3 class="sidebar-heading">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        Simulation Steps
+      </h3>
+      <div class="steps-indicator">
+        <div class="step active" id="step1"><span class="step-num">1</span><span>Location</span></div>
+        <div class="step-line"></div>
+        <div class="step" id="step2"><span class="step-num">2</span><span>Projects</span></div>
+        <div class="step-line"></div>
+        <div class="step" id="step3"><span class="step-num">3</span><span>Results</span></div>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="sidebar-section">
+      <h3 class="sidebar-heading">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Location Search
+      </h3>
+      <div class="search-box">
+        <input type="text" id="locationSearch" placeholder="Search city, village, region..." />
+        <button id="searchBtn" class="btn-search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </button>
+      </div>
+      <p class="hint-text">Or click anywhere on the map to pin a location</p>
+    </div>
+
+    <!-- Location Info -->
+    <div class="sidebar-section" id="locationInfoSection" style="display:none">
+      <h3 class="sidebar-heading">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        Selected Location
+      </h3>
+      <div class="location-card">
+        <div class="location-name" id="locationName">—</div>
+        <div class="location-coords" id="locationCoords">—</div>
+        <div class="context-grid" id="contextGrid"></div>
+      </div>
+      <div class="ai-insights-box" id="aiInsightsBox" style="display:none">
+        <div class="insights-header">✨ AI Location Briefing</div>
+        <p id="insightsSummary"></p>
+        <div class="priority-needs" id="priorityNeeds"></div>
+      </div>
+    </div>
+
+    <!-- Infrastructure + Projects -->
+    <div class="sidebar-section" id="infraSection" style="display:none">
+      <div class="infra-grid-header">
+        <h3 class="sidebar-heading" style="margin:0">Add Infrastructure</h3>
+        <button id="batchModeBtn" class="batch-mode-btn" title="Select multiple to add at once">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5v14"/></svg>
+          Batch Select
+        </button>
+      </div>
+      <div id="batchStatus" style="display:none; font-size: 0.65rem; color: var(--primary); margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; animation: pulse 2s infinite;">
+        ● Batch Selection Mode Active
+      </div>
+      <div class="infra-grid" id="infraGrid"></div>
+      
+      <!-- Batch controls -->
+      <div id="batchAddControls" style="display:none; margin-top: 10px;">
+        <div id="batchSelectionList" style="margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px;"></div>
+        <button id="addMultipleBtn" class="btn-add-project" style="width:100%">
+          Add Selected to Queue
+        </button>
+      </div>
+
+      <!-- Project config -->
+      <div class="project-config" id="projectConfig" style="display:none">
+        <div class="config-row">
+          <label>Budget <span class="config-val" id="budgetVal">$10M</span></label>
+          <input type="range" id="budgetSlider" min="1" max="500" value="10" class="slider" />
+        </div>
+        <div class="config-row">
+          <label>Timeline <span class="config-val" id="timelineVal">12 months</span></label>
+          <input type="range" id="timelineSlider" min="3" max="120" value="12" class="slider" />
+        </div>
+        <div class="config-row">
+          <label>Scale</label>
+          <div class="scale-btns">
+            <button class="scale-btn active" data-scale="small">Small</button>
+            <button class="scale-btn" data-scale="medium">Medium</button>
+            <button class="scale-btn" data-scale="large">Large</button>
+          </div>
+        </div>
+        <button class="btn-add-project" id="addProjectBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Add to Queue
+        </button>
+      </div>
+
+      <!-- Project Queue -->
+      <div id="projectQueueSection" style="display:none">
+        <div class="queue-header">
+          <span class="sidebar-heading" style="margin:0">Project Queue</span>
+          <span class="queue-count" id="queueCount">0</span>
+        </div>
+        <div id="projectQueue"></div>
+      </div>
+
+      <!-- Simulate Button -->
+      <button class="btn-simulate" id="simulateBtn" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Run Simulation
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-overlay" id="loadingOverlay" style="display:none">
+      <div class="loading-spinner"></div>
+      <div class="loading-text" id="loadingText">AI is analyzing impact...</div>
+      <div class="loading-sub">Consulting Amazon Nova AI model...</div>
+    </div>
+  </aside>
+
+  <!-- MAP -->
+  <main class="map-container">
+    <div id="map"></div>
+    <div class="map-overlay-hint" id="mapHint">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      Click anywhere on the map to select a location
+    </div>
+    <div class="map-legend" id="mapLegend" style="display:none">
+      <div class="legend-title">Simulated Projects</div>
+      <div id="legendItems"></div>
+    </div>
+  </main>
+
+  <!-- ===== RIGHT ICON RAIL ===== -->
+  <div class="right-rail">
+    <!-- Regional Context button -->
+    <button class="rail-btn" id="railBtnContext" title="Regional Context — select a location first" onclick="toggleRightPanel('context')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10-4.5 10-10 10z"/>
+        <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
+      <span class="rail-label">Context</span>
+    </button>
+    <!-- Simulation Results button — disabled until simulation runs -->
+    <button class="rail-btn rail-btn-results-disabled" id="railBtnResults" title="Run a simulation first to see results" onclick="toggleRightPanel('results')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+      </svg>
+      <span class="rail-label">Results</span>
+      <span class="rail-badge" id="railResultsBadge" style="display:none">●</span>
+    </button>
+    <!-- Reset button -->
+    <button class="rail-btn rail-btn-reset" id="resetBtn" title="New Simulation">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      <span class="rail-label">Reset</span>
+    </button>
+  </div>
+
+  <!-- ===== RIGHT SLIDE PANEL ===== -->
+  <div class="right-panel" id="rightPanel">
+    <!-- Panel Header -->
+    <div class="rp-header">
+      <div class="rp-title" id="rpTitle">Panel</div>
+      <div class="rp-actions">
+        <button class="rp-action-btn" id="rpNewTabBtn" title="Open in New Tab" style="display:none" onclick="openResultsInNewTab()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3"/></svg>
+        </button>
+        <button class="rp-close" onclick="closeRightPanel()">✕</button>
+      </div>
+    </div>
+
+    <!-- ── REGIONAL CONTEXT TAB ── -->
+    <div class="rp-tab" id="rpTabContext" style="display:none">
+      <!-- Loading shimmer -->
+      <div class="rc-loading" id="rcLoading">
+        <div class="rc-shimmer"></div><div class="rc-shimmer rc-shimmer-sm"></div><div class="rc-shimmer"></div>
+      </div>
+      <!-- Glass card -->
+      <div class="rc-glass" id="rcGlass" style="display:none">
+        <div class="rc-header">
+          <span class="rc-location-name" id="rcLocationName">—</span>
+          <span class="rc-live-badge">LIVE DATA</span>
+        </div>
+        <div class="rc-tiles" id="rcTiles"></div>
+        <div class="rc-stats-title">Key Regional Statistics</div>
+        <div class="rc-stats" id="rcStats"></div>
+        <div class="rc-sources" id="rcSources" style="display:none">
+          <span class="rc-sources-label">Sources:</span>
+          <span id="rcSourceLinks"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SIMULATION RESULTS TAB ── -->
+    <div class="rp-tab" id="rpTabResults" style="display:none">
+      <div class="dashboard-empty" id="dashboardEmpty">
+        <div class="empty-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        </div>
+        <h3>Prediction Dashboard</h3>
+        <p>Run a simulation to see AI-predicted community impact metrics here.</p>
+      </div>
+
+      <div class="dashboard-content" id="dashboardContent" style="display:none">
+        <!-- Impact Banner -->
+        <div class="impact-banner" id="impactBanner">
+          <div class="impact-score-circle" id="impactScoreCircle">
+            <span class="impact-num" id="impactNum">—</span>
+            <span class="impact-label">Impact</span>
+          </div>
+          <div class="impact-info">
+            <div class="impact-project" id="impactProject">—</div>
+            <div class="impact-location" id="impactLocation">—</div>
+            <div class="impact-time" id="impactTime">—</div>
+            <div id="sourceBadge"></div>
+          </div>
+        </div>
+
+        <!-- Chart Tabs -->
+        <div class="charts-section">
+          <div class="chart-tabs">
+            <button class="chart-tab active" data-tab="radar">Spider</button>
+            <button class="chart-tab" data-tab="bar">Bar</button>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="radarChart" style="display:block"></canvas>
+            <canvas id="barChart" style="display:none"></canvas>
+          </div>
+        </div>
+
+        <!-- 8 Metrics -->
+        <div class="metrics-section">
+          <h4 class="section-title">📊 Impact Metrics</h4>
+          <div class="metrics-grid" id="metricsGrid"></div>
+        </div>
+
+        <!-- Granular Data -->
+        <div class="granular-section" id="granularSection" style="display:none">
+          <h4 class="section-title">🔬 Granular Sub-Metrics</h4>
+          <div class="granular-grid" id="granularGrid"></div>
+        </div>
+
+        <!-- AI Explanation -->
+        <div class="explanation-section">
+          <h4 class="section-title">✨ AI Explanation</h4>
+          <p class="explanation-text" id="explanationText">—</p>
+          <div class="three-explanations" id="threeExplanations"></div>
+        </div>
+
+        <!-- AI Analyze button -->
+        <button class="btn-analyze" id="analyzeBtn" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+          AI Strategic Analysis
+        </button>
+
+        <!-- Analysis inline results -->
+        <div class="analysis-section" id="analysisSection" style="display:none">
+          <h4 class="section-title">🧠 Analysis Results</h4>
+          <p class="analysis-summary" id="analysisSummary"></p>
+          <div class="analysis-cols">
+            <div class="analysis-col">
+              <div class="section-title danger">⚠ Risks</div>
+              <ul id="analysisRisks"></ul>
+            </div>
+            <div class="analysis-col">
+              <div class="section-title amber">⚖ Trade-offs</div>
+              <ul id="analysisTradeoffs"></ul>
+            </div>
+          </div>
+          <div class="section-title success" style="margin-top:12px">✓ Suggestions</div>
+          <ul id="analysisSuggestions" class="suggestions-list"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end app-layout -->
+
+<!-- ===== STRATEGIC ANALYSIS MODAL ===== -->
+<div class="analysis-modal-overlay" id="analysisModalOverlay" style="display:none" onclick="closeAnalysisModal(event)">
+  <div class="analysis-modal" id="analysisModal">
+    <div class="analysis-modal-header">
+      <div>
+        <div class="analysis-modal-title">🧠 AI Strategic Analysis</div>
+        <div class="analysis-modal-sub" id="analysisModalSub">Comprehensive simulation insights</div>
+      </div>
+      <button class="analysis-modal-close" onclick="closeAnalysisModal(null)">✕</button>
+    </div>
+    <div class="analysis-modal-loading" id="analysisModalLoading">
+      <div class="loading-spinner"></div>
+      <p>Amazon Nova is generating strategic insights...</p>
+    </div>
+    <div class="analysis-modal-body" id="analysisModalBody" style="display:none">
+      <div>
+        <div class="am-section-title">📋 Key Findings</div>
+        <p class="am-summary" id="amSummary"></p>
+      </div>
+      <div class="am-two-col">
+        <div>
+          <div class="am-section-title danger">⚠ Critical Risks</div>
+          <ul class="am-list risk-list" id="amRisks"></ul>
+        </div>
+        <div>
+          <div class="am-section-title amber">⚖ Trade-offs</div>
+          <ul class="am-list tradeoff-list" id="amTradeoffs"></ul>
+        </div>
+      </div>
+      <div>
+        <div class="am-section-title success">✓ Actionable Improvements</div>
+        <div class="am-suggestions" id="amSuggestions"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<script src="/js/app.js"></script>
+</body>
+</html>
